@@ -44,7 +44,7 @@ DASH_COOLDOWN = 0.8
 # ---------------------------------------------------------------------------
 # Wall Movement
 # ---------------------------------------------------------------------------
-WALL_SLIDE_SPEED = 2.0      # max fall speed while wall-clinging
+WALL_SLIDE_SPEED = 0.84     # max fall speed while wall-clinging (px/frame)
 WALL_JUMP_X_FORCE = 8.0     # horizontal kick on wall jump
 WALL_JUMP_Y_FORCE = 11.0    # vertical kick on wall jump
 WALL_JUMP_WINDOW = 0.25     # seconds after leaving wall where jump fires
@@ -69,7 +69,7 @@ CLIMB_SPEED = 3.5
 # ---------------------------------------------------------------------------
 # Object Carry
 # ---------------------------------------------------------------------------
-HOLD_OFFSET_X = 28          # pixels in front of player
+HOLD_OFFSET_X = 10          # pixels in front of player
 HOLD_OFFSET_Y = 0
 
 HEAVY_SPEED_MULT = 0.75
@@ -79,7 +79,7 @@ HEAVY_JUMP_MULT = 0.85
 # Object Throw
 # ---------------------------------------------------------------------------
 THROW_FORCE_X = 14.0
-THROW_FORCE_Y = 4.0         # slight upward arc
+THROW_FORCE_Y = 5.0         # slight upward arc
 THROW_IGNORE_TIMER = 0.2    # seconds to skip player collision after throw
 
 # ---------------------------------------------------------------------------
@@ -117,8 +117,8 @@ HEAVY_STUN = 1.2
 # ---------------------------------------------------------------------------
 HAUSTORIA_RANGE = 56        # pixels — close/dangerous range
 HAUSTORIA_DRAIN_DURATION = 1.8
-HAUSTORIA_WATER_RATE = 25.0    # units per second gained
-HAUSTORIA_CHLOROPHYLL_RATE = 18.0
+HAUSTORIA_WATER_RATE = 20.0    # units per second gained
+HAUSTORIA_CHLOROPHYLL_RATE = 20.0
 HAUSTORIA_ENEMY_DAMAGE_RATE = 15.0  # health drained from enemy per second
 
 # ---------------------------------------------------------------------------
@@ -150,6 +150,8 @@ SWARM_BUG_CONTACT_DAMAGE = 1
 SWARM_BUG_WATER_VALUE = 5.0
 SWARM_BUG_CHLOROPHYLL_VALUE = 3.0
 
+SWARM_AGGRO_RANGE = 600        # px — Distance to trigger swarm chase
+
 # ---------------------------------------------------------------------------
 # Camera
 # ---------------------------------------------------------------------------
@@ -175,7 +177,7 @@ LAYER_DECOR_FRONT = "Decor_Front"
 # ---------------------------------------------------------------------------
 # Debug
 # ---------------------------------------------------------------------------
-DEBUG_MODE = False
+DEBUG_MODE = True
 DEBUG_KEY = arcade.key.F3
 
 # ---------------------------------------------------------------------------
@@ -185,7 +187,7 @@ COLOR_GROUND = (80, 55, 40)
 COLOR_PLATFORM = (100, 70, 50)
 COLOR_WALL = (90, 60, 45)
 COLOR_LADDER = (160, 120, 60)
-COLOR_PLAYER = (200, 230, 160)   # pale green daikon
+COLOR_PLAYER = (240, 240, 200)   # bright cream — stands out against dark bg
 COLOR_BASIC_ENEMY = (180, 80, 60)
 COLOR_SWARM_BUG = (220, 120, 40)
 COLOR_SPEAR = (200, 200, 180)

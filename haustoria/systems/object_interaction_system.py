@@ -126,21 +126,28 @@ class ObjectInteractionSystem:
         obj.center_y = player.center_y + HOLD_OFFSET_Y
 
     def _update_free_physics(self, obj: InteractableObject):
-        """Apply simple gravity and damping to a free-flying object."""
+        """
+        Manual gravity + collision for free objects.
+        X and Y are sub-stepped separately — a wall hit on one axis
+        cannot corrupt collision detection on the other.
+        Objects that escape the world are destroyed immediately.
+        """
         if obj.state == OBJ_STATE_BROKEN:
             return
 
-        # Gravity
+        # --- Out-of-bounds safety: destroy rogue objects immediately ---
+        if obj.center_y < -200 or obj.center_x < -400 or obj.center_x > 5000:
+            obj.state = OBJ_STATE_BROKEN
+            obj.vel_x = obj.vel_y = 0
+            return
+
+        # --- Gravity ---
         obj.vel_y -= OBJECT_GRAVITY
         obj.vel_y = max(obj.vel_y, -OBJECT_MAX_FALL)
 
-        # Move
+        # ---- X movement (single step — X speed bounded by THROW_FORCE_X) ----
         obj.center_x += obj.vel_x
-        obj.center_y += obj.vel_y
-
-        # Wall collision (simple AABB resolve)
-        hit_walls = arcade.check_for_collision_with_list(obj, self.wall_list)
-        for wall in hit_walls:
+        for wall in arcade.check_for_collision_with_list(obj, self.wall_list):
             if obj.vel_x > 0:
                 obj.right = wall.left
                 obj.vel_x *= -0.3
@@ -148,22 +155,36 @@ class ObjectInteractionSystem:
                 obj.left = wall.right
                 obj.vel_x *= -0.3
 
-        # Floor collision
-        floor_hits = arcade.check_for_collision_with_list(obj, self.wall_list)
-        for wall in floor_hits:
-            if obj.vel_y < 0:
-                obj.bottom = wall.top
-                obj.vel_y = 0
-                obj.is_grounded = True
-                obj.state = OBJ_STATE_IDLE
+        # ---- Y movement — sub-stepped, MAX_STEP_Y << floor thickness ----
+        MAX_STEP_Y = 4.0
+        vy_remain = obj.vel_y
+        obj.is_grounded = False
 
-        # Horizontal friction when grounded
+        while abs(vy_remain) > 0.001:
+            step = max(-MAX_STEP_Y, min(MAX_STEP_Y, vy_remain))
+            vy_remain -= step
+            obj.center_y += step
+
+            for wall in arcade.check_for_collision_with_list(obj, self.wall_list):
+                if step < 0 and obj.bottom < wall.top:    # landed on floor
+                    obj.bottom = wall.top
+                    obj.vel_y = 0
+                    vy_remain = 0
+                    obj.is_grounded = True
+                    if obj.state == OBJ_STATE_THROWN:
+                        obj.state = OBJ_STATE_IDLE
+                elif step > 0 and obj.top > wall.bottom:  # hit ceiling
+                    obj.top = wall.bottom
+                    obj.vel_y = 0
+                    vy_remain = 0
+
+        # --- Friction when grounded ---
         if obj.is_grounded:
             obj.vel_x *= OBJECT_FRICTION
             if abs(obj.vel_x) < 0.1:
                 obj.vel_x = 0.0
 
-        # Check thrown object hits breakable terrain
+        # --- Check thrown object hits breakable terrain ---
         if obj.state == OBJ_STATE_THROWN:
             self._check_breakable_hit(obj)
 

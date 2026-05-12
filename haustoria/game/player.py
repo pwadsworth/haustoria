@@ -38,9 +38,9 @@ class Player(arcade.Sprite):
     def __init__(self):
         super().__init__()
 
-        # --- Placeholder sprite (colored rectangle) ---
+        # --- Placeholder sprite (22 x 44 solid-color rectangle) ---
         self.texture = arcade.make_soft_square_texture(
-            48, (180, 230, 140, 255), center_alpha=255, outer_alpha=255
+            48, (*COLOR_PLAYER, 255), center_alpha=255, outer_alpha=255
         )
         self.width = 22
         self.height = 44

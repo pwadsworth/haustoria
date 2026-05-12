@@ -69,6 +69,7 @@ class HaustoriaGame(arcade.Window):
 
         # Populated by setup()
         self.player: Player | None = None
+        self.player_list: arcade.SpriteList | None = None  # single-sprite list for drawing
         self.level_data: LevelData | None = None
         self.physics_engine = None
         self.player_controller: PlayerController | None = None
@@ -90,6 +91,11 @@ class HaustoriaGame(arcade.Window):
         self._input_interact = False   # E key — also Haustoria
         self._input_respawn = False
 
+        # Text objects created in setup() once the GL context is ready
+        self._dbg_texts = []
+        self._death_text = None
+        self._respawn_text = None
+
     # ------------------------------------------------------------------
     # Setup / Level Loading
     # ------------------------------------------------------------------
@@ -97,8 +103,26 @@ class HaustoriaGame(arcade.Window):
     def setup(self):
         """Initialize player and load the first level."""
         self.player = Player()
+        self.player_list = arcade.SpriteList()
+        self.player_list.append(self.player)
         self._setup_collision_callbacks()
         self.load_level(self.current_level_name)
+
+        # Create Text objects here — after the window/GL context is ready
+        _dbg_color = (200, 255, 200)
+        _dbg_y = SCREEN_HEIGHT - 80
+        self._dbg_texts = [
+            arcade.Text("", 10, _dbg_y - i * 16, _dbg_color, 11)
+            for i in range(6)
+        ]
+        self._death_text = arcade.Text(
+            "YOU DIED", SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 30,
+            (200, 50, 50), 48, anchor_x="center",
+        )
+        self._respawn_text = arcade.Text(
+            "Press R to respawn", SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 20,
+            (180, 180, 180), 20, anchor_x="center",
+        )
 
     def load_level(self, level_name: str, spawn_id: str = "default"):
         """Load a level, rebuild physics engine and systems."""
@@ -113,20 +137,21 @@ class HaustoriaGame(arcade.Window):
         self.player.change_y = 0
         self.player.is_dead = False
 
-        # Merge walls + platforms for physics engine
+        # Solid walls — block all sides
         combined_walls = arcade.SpriteList(use_spatial_hash=True)
         for s in data.wall_list:
-            combined_walls.append(s)
-        for s in data.platform_list:
             combined_walls.append(s)
         # Breakable walls also block movement until broken
         for s in data.breakable_list:
             combined_walls.append(s)
 
         # Build physics engine
+        # NOTE: platform_list is passed to platforms= (one-way, block only from above)
+        #       so players can jump through from below and land from above.
         self.physics_engine = arcade.PhysicsEnginePlatformer(
             self.player,
             walls=combined_walls,
+            platforms=data.platform_list,
             gravity_constant=GRAVITY,
             ladders=data.ladder_list,
         )
@@ -219,6 +244,9 @@ class HaustoriaGame(arcade.Window):
 
         # 4. Physics engine
         self.physics_engine.update()
+
+        # 4b. Re-apply wall-slide cap after gravity is applied
+        self.player_controller.apply_post_physics_clamp()
 
         # 5. Object interaction
         self.object_system.update(
@@ -332,9 +360,9 @@ class HaustoriaGame(arcade.Window):
         data.water_source_list.draw()
         data.enemy_list.draw()
 
-        # Player (flash when invincible)
+        # Player (flash when invincible) — Arcade 3.x: draw via SpriteList
         if not self.player.is_invincible or int(self._total_time * 10) % 2 == 0:
-            self.player.draw()
+            self.player_list.draw()
 
         # Haustoria visual — draw line to target
         if self.player.is_using_haustoria and self.haustoria_system.current_target:
@@ -393,7 +421,6 @@ class HaustoriaGame(arcade.Window):
     def _draw_debug_gui(self):
         """Draw player state text, velocity, FPS in screen space."""
         p = self.player
-        y = SCREEN_HEIGHT - 80
         lines = [
             f"State: {p.current_state}",
             f"Vel: ({p.change_x:.1f}, {p.change_y:.1f})",
@@ -402,26 +429,17 @@ class HaustoriaGame(arcade.Window):
             f"Held: {p.held_object.object_type if p.held_object else 'None'}",
             f"FPS: {1.0 / max(self.delta_time, 0.001):.0f}",
         ]
-        for i, line in enumerate(lines):
-            arcade.draw_text(line, 10, y - i * 16, (200, 255, 200), 11)
+        for txt, line in zip(self._dbg_texts, lines):
+            txt.value = line
+            txt.draw()
 
     def _draw_death_screen(self):
         """Overlay when player is dead."""
         arcade.draw_lrbt_rectangle_filled(
             0, SCREEN_WIDTH, 0, SCREEN_HEIGHT, (0, 0, 0, 140)
         )
-        arcade.draw_text(
-            "YOU DIED",
-            SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 30,
-            (200, 50, 50), 48,
-            anchor_x="center",
-        )
-        arcade.draw_text(
-            "Press R to respawn",
-            SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 20,
-            (180, 180, 180), 20,
-            anchor_x="center",
-        )
+        self._death_text.draw()
+        self._respawn_text.draw()
 
     # ------------------------------------------------------------------
     # Input

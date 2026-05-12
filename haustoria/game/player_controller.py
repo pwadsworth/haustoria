@@ -138,7 +138,9 @@ class PlayerController:
         """If jump was pressed, store a buffer so it fires on landing."""
         if self.input_jump and not self._jump_consumed:
             self.player.jump_buffer_timer = JUMP_BUFFER_TIME
-            self._jump_consumed = True
+            # NOTE: do NOT set _jump_consumed here.
+            # The actual jump handlers (_update_wall_cling, _update_jump)
+            # set it when the jump fires, preventing double-fire.
 
     # ------------------------------------------------------------------
     # Horizontal movement
@@ -146,6 +148,13 @@ class PlayerController:
 
     def _update_horizontal(self):
         p = self.player
+
+        # During wall-jump lockout, preserve the kick velocity.
+        # This is what makes wall-to-wall bouncing work: the player cannot
+        # fight the kick direction while the lockout is active.
+        if p.wall_bounce_timer > 0:
+            return
+
         speed = PLAYER_MOVE_SPEED
         if p.held_object and getattr(p.held_object, 'is_heavy', False):
             speed *= HEAVY_SPEED_MULT
@@ -166,21 +175,21 @@ class PlayerController:
         if p.is_grounded or p.wall_bounce_timer > 0:
             return
 
-        touching_wall = (
-            (p.is_touching_wall_left and self.input_left) or
-            (p.is_touching_wall_right and self.input_right)
-        )
+        clinging_left  = p.is_touching_wall_left  and self.input_left
+        clinging_right = p.is_touching_wall_right and self.input_right
+        touching_wall  = clinging_left or clinging_right
 
         if touching_wall and p.change_y < 0:
-            # Slow the fall while clinging
+            # Slow the fall while clinging (post-physics clamp is in apply_post_physics_clamp)
             p.change_y = max(p.change_y, -WALL_SLIDE_SPEED)
 
             # Wall jump: jump pressed while clinging
             if self.input_jump and not self._jump_consumed:
-                kick_dir = 1 if p.is_touching_wall_left else -1
+                kick_dir = 1 if clinging_left else -1
                 p.change_x = kick_dir * WALL_JUMP_X_FORCE
                 p.change_y = WALL_JUMP_Y_FORCE
                 p.wall_bounce_timer = WALL_BOUNCE_LOCKOUT
+                p.jump_buffer_timer = 0.0
                 self._jump_consumed = True
                 p.set_state(STATE_JUMPING)
 
@@ -380,3 +389,22 @@ class PlayerController:
         self.input_pickup = False
         self.input_throw_attack = False
         self.input_haustoria = False
+
+    def apply_post_physics_clamp(self):
+        """
+        Re-apply the wall-slide speed cap AFTER physics_engine.update().
+
+        The physics engine adds gravity each frame, which can push change_y
+        past the cap set in _update_wall_cling.  Calling this after physics
+        ensures the slide speed stays bounded.
+        """
+        p = self.player
+        if p.is_grounded or p.wall_bounce_timer > 0 or p.is_dead:
+            return
+
+        clinging = (
+            (p.is_touching_wall_left  and self.input_left) or
+            (p.is_touching_wall_right and self.input_right)
+        )
+        if clinging and p.change_y < -WALL_SLIDE_SPEED:
+            p.change_y = -WALL_SLIDE_SPEED

@@ -73,7 +73,8 @@ class Enemy(arcade.Sprite):
         # Movement
         self.move_speed: float = move_speed
         self.patrol_range: float = patrol_range
-        self.patrol_origin_x: float = center_x  # center of patrol path
+        self.patrol_origin_x: float = center_x   # centre of patrol / orbit
+        self.patrol_origin_y: float = center_y   # centre of patrol / orbit
         self.detection_range: float = detection_range
         self.attack_range: float = attack_range
 
@@ -146,7 +147,7 @@ def make_swarm_bug(center_x: float, center_y: float) -> Enemy:
     bug = Enemy(
         enemy_type="swarm_bug",
         center_x=center_x, center_y=center_y,
-        width=14, height=12,
+        width=7, height=6,
         color=COLOR_SWARM_BUG,
         health=SWARM_BUG_HEALTH,
         move_speed=SWARM_BUG_MOVE_SPEED,

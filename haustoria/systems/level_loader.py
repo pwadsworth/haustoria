@@ -115,7 +115,7 @@ def load_zone_01() -> LevelData:
     data.width = 3200.0
     data.height = 1024.0
     data.spawn_x = 80
-    data.spawn_y = 120
+    data.spawn_y = 54   # floor top (32) + player half-height (22) = 54
 
     W = data.wall_list
     P = data.platform_list
@@ -136,23 +136,49 @@ def load_zone_01() -> LevelData:
     W.append(_make_block(960, 16, 32, 32, COLOR_GROUND))  # small step
 
     # ---- Section B: Wall-cling vertical shaft ----
-    # Left wall face (player clings right side)
-    W.append(_make_block(1024, 400, 32, 800, COLOR_WALL))
-    # Right wall face (player clings left side)
-    W.append(_make_block(1216, 400, 32, 800, COLOR_WALL))
-    # Shaft floor
-    W.append(_make_block(1120, 16, 192 - 32, 32, COLOR_GROUND))
-    # Platform at top of shaft
-    P.append(_make_block(1120, 680, 160, 24, COLOR_PLATFORM))
+    # Interior width = 160 px (x 1040–1200).
+    # Wall-jump X force (8 px/frame) carries player ~120 px during lockout,
+    # then normal movement closes the remaining 40 px — shaft is crossable.
+    #
+    # LEFT wall  — has a 96 px gap at the bottom so the player can walk in.
+    #   Ground is at y=32 (floor top), player is 44 px tall → needs ≥52 px gap.
+    #   Gap: y=32 to y=96. Wall block: y=96 to y=640.
+    #   Block: center_y = (96+640)/2 = 368,  height = 544
+    W.append(_make_block(1025, 368, 32, 544, COLOR_WALL))
+
+    # RIGHT wall — full height from floor to y=640 (top is open).
+    #   center_y = 320,  height = 640
+    W.append(_make_block(1200, 320, 32, 640, COLOR_WALL))
+
+    # Shaft floor (explicit block; main ground floor also covers this).
+    W.append(_make_block(1120, 16, 160, 32, COLOR_GROUND))
+
+    # Landing platform — to the RIGHT of the right wall (outer face at x=1232).
+    # Left edge at x=1264, safely outside the shaft.  Player wall-jumps out
+    # the open top and lands here before continuing to the ladder section.
+    P.append(_make_block(1360, 656, 100, 24, COLOR_PLATFORM))
+
 
     # ---- Section C: Ladder climb ----
-    # Vertical wall with ladder cutout
-    W.append(_make_block(1360, 300, 32, 600, COLOR_WALL))
-    # Ladder tiles (center x=1360)
-    for row in range(10):
-        L.append(_make_ladder_tile(1360, 64 + row * 48))
-    # Landing platform above ladder
-    P.append(_make_block(1520, 512, 320, 24, COLOR_PLATFORM))
+    # Layout overview:
+    #   • Ladder is at x=1550, fully exposed and accessible from both the
+    #     ground (y=32) and the upper exit platform (y=656).
+    #   • A backing wall on the right (x=1584) gives visual context.
+    #   • A connecting platform at y=668 links the ladder top to the level.
+    #
+    # Ladder tiles: 16px wide, 30px tall, spaced 32px apart.
+    # Tiles run from y=48 (just above ground) to y=656 (exit platform height).
+    #   count = (656 - 48) // 32 + 1 = 20 rungs
+
+    for row in range(20):
+        L.append(_make_ladder_tile(1550, 48 + row * 30))
+
+    # Backing wall to the right of the ladder (visual + movement boundary)
+    W.append(_make_block(1580, 344, 32, 688, COLOR_WALL))  # y=0 to y=688
+
+    # Connecting platform at the top — links ladder summit to exit-platform height
+    # P.append(_make_block(1440, 668, 288, 24, COLOR_PLATFORM))  # x=1296–1584
+
 
     # ---- Section D: Enemy + object arena ----
     # Wide ground section continues from floor
@@ -228,7 +254,7 @@ def load_zone_01() -> LevelData:
 # ---------------------------------------------------------------------------
 # Zone 2 — Locked swarm room
 # ---------------------------------------------------------------------------
-# Camera locks to this room. 12 swarm bugs spawn in waves.
+# Camera locks to this room. 8 swarm bugs spawn in waves.
 # A level exit leads to the end.
 # ---------------------------------------------------------------------------
 
@@ -269,11 +295,10 @@ def load_zone_02() -> LevelData:
     data.object_list.append(rock)
     data.objects.append(rock)
 
-    # ---- Swarm bugs (spawned in a loose cluster) ----
+    # ---- Swarm bugs — 8 bugs per swarm, loose cluster ----
     spawn_positions = [
-        (900, 600), (950, 600), (1000, 600), (1050, 600),
-        (900, 550), (950, 550), (1000, 550), (1050, 550),
-        (800, 600), (850, 600), (800, 550), (850, 550),
+        (880, 600), (940, 600), (1000, 600), (1060, 600),
+        (880, 550), (940, 550), (1000, 550), (1060, 550),
     ]
     for sx, sy in spawn_positions:
         bug = make_swarm_bug(center_x=sx, center_y=sy)
