@@ -5,7 +5,7 @@
 Built using Python and the Arcade library, this game features a custom sub-stepped physics engine, destructible terrain, state-machine driven enemy AI, and interactive throwable objects.
 
 ## Authors
-This game is a school project made by:
+This game is a school project for 8-B made by:
 - Sam W.
 - Zak A.
 - Arjun C.
