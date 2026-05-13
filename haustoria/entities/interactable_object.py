@@ -42,6 +42,7 @@ class InteractableObject(arcade.Sprite):
         width: int = 20,
         height: int = 20,
         color=COLOR_ROCK,
+        texture_path: str = None,
         tags: list = None,
         mass: float = 1.0,
         damage: int = 1,
@@ -49,8 +50,16 @@ class InteractableObject(arcade.Sprite):
         can_break_terrain: bool = False,
         can_bounce: bool = False,
     ):
-        super().__init__()
-        self.texture = arcade.make_soft_square_texture(max(width, height), color, outer_alpha=255)
+        super().__init__(hit_box_algorithm="None")
+        if texture_path:
+            try:
+                self.texture = arcade.load_texture(texture_path)
+            except Exception as e:
+                print(f"Failed to load object texture {texture_path}: {e}")
+                self.texture = arcade.make_soft_square_texture(max(width, height), color, outer_alpha=255)
+        else:
+            self.texture = arcade.make_soft_square_texture(max(width, height), color, outer_alpha=255)
+            
         self.width = width
         self.height = height
         self.center_x = center_x
@@ -94,8 +103,9 @@ def make_spear(center_x: float, center_y: float) -> InteractableObject:
     return InteractableObject(
         object_type="throwing_spear",
         center_x=center_x, center_y=center_y,
-        width=8, height=28,
+        width=32, height=8, # Spear is horizontal now
         color=COLOR_SPEAR,
+        texture_path="../assets/sprites/objects/spear.png",
         tags=[TAG_LIGHT, TAG_WEAPON, TAG_BOUNCE],
         mass=0.6,
         damage=2,
@@ -112,6 +122,7 @@ def make_heavy_rock(center_x: float, center_y: float) -> InteractableObject:
         center_x=center_x, center_y=center_y,
         width=24, height=20,
         color=COLOR_ROCK,
+        texture_path="../assets/sprites/objects/rock.png",
         tags=[TAG_HEAVY, TAG_WEAPON],
         mass=2.0,
         damage=2,
@@ -127,6 +138,7 @@ def make_wooden_crate(center_x: float, center_y: float) -> InteractableObject:
         center_x=center_x, center_y=center_y,
         width=28, height=28,
         color=COLOR_CRATE,
+        texture_path="../assets/sprites/objects/crate.png",
         tags=[TAG_HEAVY, TAG_PLATFORM],
         mass=2.5,
         damage=1,
@@ -141,6 +153,7 @@ def make_bounce_object(center_x: float, center_y: float) -> InteractableObject:
         center_x=center_x, center_y=center_y,
         width=12, height=20,
         color=COLOR_BOUNCE_OBJECT,
+        texture_path="../assets/sprites/objects/bounce_spike.png",
         tags=[TAG_BOUNCE],
         mass=999.0,
         damage=0,
