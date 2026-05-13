@@ -90,7 +90,7 @@ class InteractableObject(arcade.Sprite):
 
 
 def make_spear(center_x: float, center_y: float) -> InteractableObject:
-    """Factory: throwing spear — light, weapon, can bounce player."""
+    """Factory: throwing spear — light, weapon, can bounce."""
     return InteractableObject(
         object_type="throwing_spear",
         center_x=center_x, center_y=center_y,

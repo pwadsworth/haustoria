@@ -9,7 +9,9 @@ from constants import (
     PLAYER_MAX_HEALTH, PLAYER_MAX_WATER, PLAYER_MAX_CHLOROPHYLL,
     COLOR_PLAYER, COYOTE_TIME, JUMP_BUFFER_TIME,
     DASH_COOLDOWN, SLIDE_COOLDOWN, ROLL_COOLDOWN, ATTACK_COOLDOWN,
+    PLAYER_WIDTH, PLAYER_HEIGHT
 )
+from arcade.hitbox import HitBox
 
 # Player state constants
 STATE_IDLE = "idle"
@@ -36,14 +38,34 @@ class Player(arcade.Sprite):
     """
 
     def __init__(self):
-        super().__init__()
+        # We enforce "None" so the hit box perfectly matches the 128x128 texture bounds
+        # for ALL frames. This prevents physics jitter/flickering on animation loops.
+        super().__init__(hit_box_algorithm="None")
 
-        # --- Placeholder sprite (22 x 44 solid-color rectangle) ---
-        self.texture = arcade.make_soft_square_texture(
-            48, (*COLOR_PLAYER, 255), center_alpha=255, outer_alpha=255
-        )
-        self.width = 22
-        self.height = 44
+        # --- Load textures ---
+        base_path = "../assets/sprites/player"
+        try:
+            self.idle_textures = [arcade.load_texture(f"{base_path}/player_idle_{i}.png") for i in range(4)]
+            self.walk_textures = [arcade.load_texture(f"{base_path}/player_walk_{i}.png") for i in range(6)]
+            self.jump_texture = arcade.load_texture(f"{base_path}/player_jump_0.png")
+            self.fall_texture = arcade.load_texture(f"{base_path}/player_fall_0.png")
+        except Exception as e:
+            print("Failed to load sprites:", e)
+            self.idle_textures = [arcade.make_soft_square_texture(48, (*COLOR_PLAYER, 255), center_alpha=255, outer_alpha=255)]
+            self.walk_textures = self.idle_textures
+            self.jump_texture = self.idle_textures[0]
+            self.fall_texture = self.idle_textures[0]
+
+        self.texture = self.idle_textures[0]
+        
+        # We enforce drawing and collision size using width/height
+        # Arcade will automatically generate a matching hit box.
+        self.width = PLAYER_WIDTH
+        self.height = PLAYER_HEIGHT
+        
+        # Animation state
+        self.cur_texture_index = 0.0
+        self.animation_speed = 8.0 # frames per second
 
         # --- Resources ---
         self.health: int = PLAYER_MAX_HEALTH
@@ -155,3 +177,43 @@ class Player(arcade.Sprite):
             self.is_sliding = False
         if self.roll_timer <= 0.0:
             self.is_rolling = False
+
+    def update_animation(self, delta_time: float = 1 / 60):
+        """Update the player's texture based on state and timers."""
+        # Update facing direction (flip horizontally if facing left)
+        if self.change_x > 0:
+            self.facing_direction = 1
+        elif self.change_x < 0:
+            self.facing_direction = -1
+
+        # Determine which texture set to use
+        textures = self.idle_textures
+        if self.current_state in (STATE_JUMPING, STATE_WALL_CLINGING, STATE_CLIMBING):
+            self.texture = self.jump_texture
+            textures = None
+        elif self.current_state == STATE_FALLING:
+            self.texture = self.fall_texture
+            textures = None
+        elif self.current_state in (STATE_RUNNING, STATE_DASHING):
+            textures = self.walk_textures
+            self.animation_speed = 12.0
+        else:
+            textures = self.idle_textures
+            self.animation_speed = 6.0
+
+        if textures:
+            self.cur_texture_index += self.animation_speed * delta_time
+            if self.cur_texture_index >= len(textures):
+                self.cur_texture_index -= len(textures)
+            # Failsafe bounds check
+            idx = int(self.cur_texture_index)
+            if idx >= len(textures): idx = 0
+            self.texture = textures[idx]
+
+        # Enforce exact physical dimensions so the physics engine doesn't freak out
+        self.width = PLAYER_WIDTH
+        self.height = PLAYER_HEIGHT
+
+        # Apply facing direction to the texture's scale_x
+        if self.facing_direction == -1:
+            self.scale_x = -abs(self.scale_x)

@@ -140,11 +140,9 @@ def load_zone_01() -> LevelData:
     # Wall-jump X force (8 px/frame) carries player ~120 px during lockout,
     # then normal movement closes the remaining 40 px — shaft is crossable.
     #
-    # LEFT wall  — has a 96 px gap at the bottom so the player can walk in.
-    #   Ground is at y=32 (floor top), player is 44 px tall → needs ≥52 px gap.
-    #   Gap: y=32 to y=96. Wall block: y=96 to y=640.
-    #   Block: center_y = (96+640)/2 = 368,  height = 544
-    W.append(_make_block(1025, 368, 32, 544, COLOR_WALL))
+    # LEFT wall  — has a 140 px gap at the bottom so the player can walk in. Ground is at y=32 (floor top)
+    #   Block: center_y = (140+640)/2 = 390,  height = 522
+    W.append(_make_block(1025, 390, 32, 522, COLOR_WALL))
 
     # RIGHT wall — full height from floor to y=640 (top is open).
     #   center_y = 320,  height = 640

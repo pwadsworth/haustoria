@@ -235,6 +235,7 @@ class HaustoriaGame(arcade.Window):
 
         # 1. Player timers
         self.player.update_timers(delta_time)
+        self.player.update_animation(delta_time)
 
         # 2. Feed one-shot inputs into controller
         self._feed_inputs_to_controller()
