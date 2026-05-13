@@ -256,6 +256,8 @@ class HaustoriaGame(arcade.Window):
 
         # 6. Enemy AI
         self.enemy_ai.update(data.enemy_list, self.player, delta_time)
+        for enemy in data.enemy_list:
+            enemy.update_animation(delta_time)
 
         # 7. Combat
         self.combat_system.update(

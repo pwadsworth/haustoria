@@ -62,6 +62,12 @@ class Enemy(arcade.Sprite):
         self.enemy_type: str = enemy_type
         self.facing_direction: int = facing_direction
 
+        # Animation State
+        self.textures_list = None
+        self.attack_texture = None
+        self.cur_texture_index = 0.0
+        self.animation_speed = 15.0 # Fast flapping for bugs
+
         # Resources
         self.health: int = health
         self.max_health: int = health
@@ -121,10 +127,38 @@ class Enemy(arcade.Sprite):
         if self.stun_timer <= 0 and self.state == ENEMY_STUNNED:
             self.set_state(ENEMY_PATROL)
 
+    def update_animation(self, delta_time: float):
+        """Update sprite texture based on loaded animations."""
+        if self.state == ENEMY_ATTACK and self.attack_texture:
+            self.texture = self.attack_texture
+        elif self.textures_list:
+            self.cur_texture_index += self.animation_speed * delta_time
+            if self.cur_texture_index >= len(self.textures_list):
+                self.cur_texture_index -= len(self.textures_list)
+                
+            idx = int(self.cur_texture_index)
+            if idx >= len(self.textures_list): idx = 0
+            self.texture = self.textures_list[idx]
+            
+        # Re-enforce physical dimensions
+        # Make sure it keeps its initial hitbox size regardless of texture
+        if self.enemy_type == "swarm_bug":
+            self.width = 16
+            self.height = 16
+        elif self.enemy_type == "basic_ground_enemy":
+            self.width = 28
+            self.height = 36
+            
+        # Flip based on horizontal direction
+        if self.facing_direction == 1:
+            self.scale_x = abs(self.scale_x)
+        elif self.facing_direction == -1:
+            self.scale_x = -abs(self.scale_x)
+
 
 def make_basic_enemy(center_x: float, center_y: float, facing: int = 1) -> Enemy:
     """Factory: basic ground-patrolling enemy."""
-    return Enemy(
+    enemy = Enemy(
         enemy_type="basic_ground_enemy",
         center_x=center_x, center_y=center_y,
         width=28, height=36,
@@ -140,6 +174,18 @@ def make_basic_enemy(center_x: float, center_y: float, facing: int = 1) -> Enemy
         chlorophyll_value=BASIC_ENEMY_CHLOROPHYLL_VALUE,
         facing_direction=facing,
     )
+    
+    # Load textures (4-frame worm animation)
+    base_path = "../assets/sprites/enemies/basic_enemy"
+    try:
+        enemy.textures_list = [arcade.load_texture(f"{base_path}/worm_move_{i}.png") for i in range(3)]
+        enemy.attack_texture = arcade.load_texture(f"{base_path}/worm_attack.png")
+        enemy.texture = enemy.textures_list[0]
+        enemy.animation_speed = 4.0 # Slower crawling speed
+    except Exception as e:
+        print(f"Failed to load basic enemy textures: {e}")
+        
+    return enemy
 
 
 def make_swarm_bug(center_x: float, center_y: float) -> Enemy:
@@ -159,5 +205,17 @@ def make_swarm_bug(center_x: float, center_y: float) -> Enemy:
         water_value=SWARM_BUG_WATER_VALUE,
         chlorophyll_value=SWARM_BUG_CHLOROPHYLL_VALUE,
     )
+    
+    # Load textures
+    base_path = "../assets/sprites/enemies/swarm_bug"
+    try:
+        bug.textures_list = [arcade.load_texture(f"{base_path}/bug_fly_{i}.png") for i in range(4)]
+        bug.texture = bug.textures_list[0]
+        # Increase drawing size slightly to make them visible but keep small hit box
+        bug.width = 16
+        bug.height = 16
+    except Exception as e:
+        print(f"Failed to load swarm bug textures: {e}")
+        
     bug.can_be_haustoria_target = True
     return bug
