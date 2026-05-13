@@ -43,7 +43,7 @@ class Player(arcade.Sprite):
         super().__init__(hit_box_algorithm="None")
 
         # --- Load textures ---
-        base_path = "../assets/sprites/player"
+        base_path = "assets/sprites/player"
         try:
             self.idle_textures = [arcade.load_texture(f"{base_path}/player_idle_{i}.png") for i in range(4)]
             self.walk_textures = [arcade.load_texture(f"{base_path}/player_walk_{i}.png") for i in range(6)]

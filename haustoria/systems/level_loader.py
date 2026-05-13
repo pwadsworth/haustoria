@@ -128,33 +128,38 @@ def load_zone_01() -> LevelData:
     W.append(_make_block(-16, 512, 32, 1024, COLOR_WALL))
 
     # ---- Section A: Staircase platforms ----
-    P.append(_make_block(300,  160, 192, 24, COLOR_PLATFORM))
-    P.append(_make_block(560,  256, 192, 24, COLOR_PLATFORM))
-    P.append(_make_block(820,  352, 192, 24, COLOR_PLATFORM))
+    P.append(_make_block(300,  160, 100, 24, COLOR_PLATFORM))
+    P.append(_make_block(500,  260, 100, 24, COLOR_PLATFORM))
+    P.append(_make_block(700,  360, 100, 24, COLOR_PLATFORM))
+    P.append(_make_block(900,  460, 100, 24, COLOR_PLATFORM))
+    P.append(_make_block(1000, 560, 50, 24, COLOR_PLATFORM))
 
     # Drop-off before shaft
     W.append(_make_block(960, 16, 32, 32, COLOR_GROUND))  # small step
-
+    
     # ---- Section B: Wall-cling vertical shaft ----
     # Interior width = 160 px (x 1040–1200).
-    # Wall-jump X force (8 px/frame) carries player ~120 px during lockout,
-    # then normal movement closes the remaining 40 px — shaft is crossable.
-    #
     # LEFT wall  — has a 140 px gap at the bottom so the player can walk in. Ground is at y=32 (floor top)
-    #   Block: center_y = (140+640)/2 = 390,  height = 522
-    W.append(_make_block(1025, 390, 32, 522, COLOR_WALL))
+    W.append(_make_block(1025, 390, 32, 500, COLOR_WALL))
 
-    # RIGHT wall — full height from floor to y=640 (top is open).
-    #   center_y = 320,  height = 640
-    W.append(_make_block(1200, 320, 32, 640, COLOR_WALL))
+    # RIGHT wall — upper unbreakable section
+    # top is 640, bottom is 128. Height = 640-128 = 512. center_y = 128 + 256 = 384
+    W.append(_make_block(1200, 390, 32, 500, COLOR_WALL))
+    
+    # RIGHT wall — breakable bottom section
+    bwall_shaft = BreakableTerrain(
+        center_x=1200, center_y=64,
+        width=32, height=140,
+        health=1, break_method=BreakableTerrain.BREAK_ANY,
+    )
+    data.breakable_list.append(bwall_shaft)
+    data.breakables.append(bwall_shaft)
 
-    # Shaft floor (explicit block; main ground floor also covers this).
-    W.append(_make_block(1120, 16, 160, 32, COLOR_GROUND))
 
     # Landing platform — to the RIGHT of the right wall (outer face at x=1232).
     # Left edge at x=1264, safely outside the shaft.  Player wall-jumps out
     # the open top and lands here before continuing to the ladder section.
-    P.append(_make_block(1360, 656, 100, 24, COLOR_PLATFORM))
+    P.append(_make_block(1360, 560, 100, 24, COLOR_PLATFORM))
 
 
     # ---- Section C: Ladder climb ----
@@ -165,23 +170,29 @@ def load_zone_01() -> LevelData:
     #   • A connecting platform at y=668 links the ladder top to the level.
     #
     # Ladder tiles: 16px wide, 30px tall, spaced 32px apart.
-    # Tiles run from y=48 (just above ground) to y=656 (exit platform height).
-    #   count = (656 - 48) // 32 + 1 = 20 rungs
+    # Tiles run from y=144 (above shortcut) to y=656 (exit platform height).
+    #   count = (656 - 144) // 30 + 1 = 18 rungs
 
-    for row in range(20):
-        L.append(_make_ladder_tile(1550, 48 + row * 30))
+    for row in range(18):
+        L.append(_make_ladder_tile(1550, 144 + row * 30))
 
-    # Backing wall to the right of the ladder (visual + movement boundary)
-    W.append(_make_block(1580, 344, 32, 688, COLOR_WALL))  # y=0 to y=688
-
-    # Connecting platform at the top — links ladder summit to exit-platform height
-    # P.append(_make_block(1440, 668, 288, 24, COLOR_PLATFORM))  # x=1296–1584
-
+    # Backing wall to the right of the ladder — upper unbreakable section
+    # top is 670, bottom is 120. Height = 670-120 = 550. center_y = 128 + 280 = 400
+    W.append(_make_block(1580, 400, 32, 550, COLOR_WALL))
+    
+    # Backing wall — breakable bottom section
+    bwall_stair = BreakableTerrain(
+        center_x=1580, center_y=64,
+        width=32, height=128,
+        health=1, break_method=BreakableTerrain.BREAK_ANY,
+    )
+    data.breakable_list.append(bwall_stair)
+    data.breakables.append(bwall_stair)
 
     # ---- Section D: Enemy + object arena ----
     # Wide ground section continues from floor
     P.append(_make_block(2000, 320, 512, 24, COLOR_PLATFORM))  # mid platform
-    P.append(_make_block(2400, 480, 320, 24, COLOR_PLATFORM))  # high platform
+    P.append(_make_block(2400, 450, 320, 24, COLOR_PLATFORM))  # high platform
 
     # ---- Section E: Breakable wall (shortcut) ----
     bwall = BreakableTerrain(
@@ -191,8 +202,6 @@ def load_zone_01() -> LevelData:
     )
     data.breakable_list.append(bwall)
     data.breakables.append(bwall)
-    # Wall blocks around the breakable section
-    W.append(_make_block(2200, 80, 32, 128, COLOR_WALL))  # visual backing (removed when broken)
 
     # ---- Section F: Exit ----
     exit_sprite = LevelExit(
@@ -216,6 +225,11 @@ def load_zone_01() -> LevelData:
     data.enemies.append(e2)
 
     # ---- Objects ----
+    # Shortcut tools at start
+    data.object_list.append(make_heavy_rock(center_x=250, center_y=80))
+    data.object_list.append(make_heavy_rock(center_x=300, center_y=80))
+
+    data.object_list.append(make_spear(center_x=1850, center_y=80))
     spear = make_spear(center_x=200, center_y=80)
     data.object_list.append(spear)
     data.objects.append(spear)

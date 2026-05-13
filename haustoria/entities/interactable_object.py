@@ -97,6 +97,19 @@ class InteractableObject(arcade.Sprite):
         # Grounded flag (set by physics update)
         self.is_grounded: bool = False
 
+    def update_animation(self):
+        """Update sprite visual facing direction."""
+        if self.state == OBJ_STATE_HELD and self.held_by:
+            if self.held_by.facing_direction == 1:
+                self.scale_x = abs(self.scale_x)
+            elif self.held_by.facing_direction == -1:
+                self.scale_x = -abs(self.scale_x)
+        else:
+            if self.vel_x > 0.1:
+                self.scale_x = abs(self.scale_x)
+            elif self.vel_x < -0.1:
+                self.scale_x = -abs(self.scale_x)
+
 
 def make_spear(center_x: float, center_y: float) -> InteractableObject:
     """Factory: throwing spear — light, weapon, can bounce."""
@@ -105,7 +118,7 @@ def make_spear(center_x: float, center_y: float) -> InteractableObject:
         center_x=center_x, center_y=center_y,
         width=32, height=8, # Spear is horizontal now
         color=COLOR_SPEAR,
-        texture_path="../assets/sprites/objects/spear.png",
+        texture_path="assets/sprites/objects/spear.png",
         tags=[TAG_LIGHT, TAG_WEAPON, TAG_BOUNCE],
         mass=0.6,
         damage=2,
@@ -122,7 +135,7 @@ def make_heavy_rock(center_x: float, center_y: float) -> InteractableObject:
         center_x=center_x, center_y=center_y,
         width=24, height=20,
         color=COLOR_ROCK,
-        texture_path="../assets/sprites/objects/rock.png",
+        texture_path="assets/sprites/objects/rock.png",
         tags=[TAG_HEAVY, TAG_WEAPON],
         mass=2.0,
         damage=2,
@@ -138,7 +151,7 @@ def make_wooden_crate(center_x: float, center_y: float) -> InteractableObject:
         center_x=center_x, center_y=center_y,
         width=28, height=28,
         color=COLOR_CRATE,
-        texture_path="../assets/sprites/objects/crate.png",
+        texture_path="assets/sprites/objects/crate.png",
         tags=[TAG_HEAVY, TAG_PLATFORM],
         mass=2.5,
         damage=1,
@@ -153,7 +166,7 @@ def make_bounce_object(center_x: float, center_y: float) -> InteractableObject:
         center_x=center_x, center_y=center_y,
         width=12, height=20,
         color=COLOR_BOUNCE_OBJECT,
-        texture_path="../assets/sprites/objects/bounce_spike.png",
+        texture_path="assets/sprites/objects/bounce_spike.png",
         tags=[TAG_BOUNCE],
         mass=999.0,
         damage=0,

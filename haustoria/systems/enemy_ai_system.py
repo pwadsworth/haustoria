@@ -88,7 +88,7 @@ class EnemyAISystem:
 
     def _update_movement(self, enemy: Enemy, player, delta_time: float):
         if enemy.state == ENEMY_STUNNED:
-            self._apply_gravity(enemy)
+            self._apply_physics(enemy)
             return
 
         if enemy.enemy_type == "swarm_bug":
@@ -100,8 +100,7 @@ class EnemyAISystem:
         elif enemy.state == ENEMY_ATTACK:
             self._move_attack(enemy, player, delta_time)
 
-        self._apply_gravity(enemy)
-        self._resolve_wall_collisions(enemy)
+        self._apply_physics(enemy)
         self._check_edge_turn(enemy)
 
     def _move_patrol(self, enemy: Enemy, delta_time: float):
@@ -289,25 +288,14 @@ class EnemyAISystem:
                 ry = 0
                 break
 
-    def _apply_gravity(self, enemy: Enemy):
-        """Simple gravity for ground-based enemies (not swarm bugs)."""
+    def _apply_physics(self, enemy: Enemy):
+        """Simple physics for ground-based enemies (not swarm bugs)."""
         if enemy.enemy_type == "swarm_bug":
             return
-        enemy.vel_y -= GRAVITY
-        enemy.vel_y = max(enemy.vel_y, -12.0)
-        enemy.center_y += enemy.vel_y
+            
+        # 1. X Movement and collision
         enemy.center_x += enemy.change_x
-
-        # Ground resolution
         hits = arcade.check_for_collision_with_list(enemy, self._get_all_walls())
-        for wall in hits:
-            if enemy.vel_y < 0:
-                enemy.bottom = wall.top
-                enemy.vel_y = 0
-
-    def _resolve_wall_collisions(self, enemy: Enemy):
-        """Push enemy out of horizontal wall overlaps (X axis only)."""
-        hits = arcade.check_for_collision_with_list(enemy, self.wall_list)
         for wall in hits:
             if enemy.change_x > 0:
                 enemy.right = wall.left
@@ -315,6 +303,20 @@ class EnemyAISystem:
             elif enemy.change_x < 0:
                 enemy.left = wall.right
                 enemy.facing_direction = 1
+
+        # 2. Y Movement (Gravity) and collision
+        enemy.vel_y -= GRAVITY
+        enemy.vel_y = max(enemy.vel_y, -12.0)
+        enemy.center_y += enemy.vel_y
+
+        hits = arcade.check_for_collision_with_list(enemy, self._get_all_walls())
+        for wall in hits:
+            if enemy.vel_y < 0:
+                enemy.bottom = wall.top
+                enemy.vel_y = 0
+            elif enemy.vel_y > 0:
+                enemy.top = wall.bottom
+                enemy.vel_y = 0
 
     def _check_edge_turn(self, enemy: Enemy):
         """Turn around at platform edges (probe 4px ahead + 20px down)."""

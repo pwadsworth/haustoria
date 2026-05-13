@@ -19,21 +19,21 @@
 - [x] Resource bars (Water/Chloro draining, HUD visible)
 
 ### 🔲 Still to test in-game
-- [ ] Ladder climb (W near the ladder in the shaft area → Section C)
-- [ ] Slide (Ctrl or crouch input?)
-- [ ] Object pickup (F) + carry + movement penalty
-- [ ] Throw (J while holding) — aim at wall / enemy
-- [ ] Bounce object (jump onto green bounce pad)
-- [ ] Enemy patrol + chase detection
-- [ ] Melee attack (J with no held object) + hit stun
+- [x] Ladder climb (W near the ladder in the shaft area → Section C)
+- [x] Slide (Ctrl or crouch input?)
+- [x] Object pickup (F) + carry + movement penalty
+- [x] Throw (J while holding) — aim at wall / enemy
+- [x] Bounce object (jump onto green bounce pad)
+- [x] Enemy patrol + chase detection
+- [x] Melee attack (J with no held object) + hit stun
 - [ ] Haustoria drain (E near stunned/close enemy) → water/chloro gain
-- [ ] Save point interaction (E near save point) + respawn (R after dying)
+- [x] Save point interaction (E near save point) + respawn (R after dying)
 - [ ] Breakable terrain (throw heavy rock at breakable wall)
-- [ ] Level exit → Zone 2 transition
-- [ ] Zone 2 swarm encounter — flocking in motion
+- [x] Level exit → Zone 2 transition
+- [x] Zone 2 swarm encounter — flocking in motion
 
 ### 🔲 Polish / known deferred items
 - [ ] Replace remaining `arcade.draw_text` (enemy labels in debug world)
-- [ ] Ladder section access (Section C) — verify ladder tiles line up
-- [ ] Spawn position for Zone 2
+- [x] Ladder section access (Section C) — verify ladder tiles line up
+- [x] Spawn position for Zone 2
 - [ ] Tiled `.tmx` map loading (post-prototype)

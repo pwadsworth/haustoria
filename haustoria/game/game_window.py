@@ -163,7 +163,7 @@ class HaustoriaGame(arcade.Window):
         self.object_system = ObjectInteractionSystem(
             data.wall_list, data.breakable_list
         )
-        self.enemy_ai = EnemyAISystem(data.wall_list, data.platform_list)
+        self.enemy_ai = EnemyAISystem(combined_walls, data.platform_list)
 
         # Camera bounds
         self.world_camera.set_bounds(data.width, data.height)
@@ -253,6 +253,9 @@ class HaustoriaGame(arcade.Window):
         self.object_system.update(
             self.player, data.object_list, delta_time
         )
+        for obj in data.object_list:
+            if hasattr(obj, 'update_animation'):
+                obj.update_animation()
 
         # 6. Enemy AI
         self.enemy_ai.update(data.enemy_list, self.player, delta_time)

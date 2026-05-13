@@ -176,7 +176,7 @@ def make_basic_enemy(center_x: float, center_y: float, facing: int = 1) -> Enemy
     )
     
     # Load textures (4-frame worm animation)
-    base_path = "../assets/sprites/enemies/basic_enemy"
+    base_path = "assets/sprites/enemies/basic_enemy"
     try:
         enemy.textures_list = [arcade.load_texture(f"{base_path}/worm_move_{i}.png") for i in range(3)]
         enemy.attack_texture = arcade.load_texture(f"{base_path}/worm_attack.png")
@@ -207,7 +207,7 @@ def make_swarm_bug(center_x: float, center_y: float) -> Enemy:
     )
     
     # Load textures
-    base_path = "../assets/sprites/enemies/swarm_bug"
+    base_path = "assets/sprites/enemies/swarm_bug"
     try:
         bug.textures_list = [arcade.load_texture(f"{base_path}/bug_fly_{i}.png") for i in range(4)]
         bug.texture = bug.textures_list[0]
