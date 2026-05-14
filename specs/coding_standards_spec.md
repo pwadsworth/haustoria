@@ -54,43 +54,104 @@ The code should read like an explanation of the game.
 Use the approved structure:
 
 ```text
-haustoria/
-│
-├── main.py
-├── constants.py
-├── requirements.txt
-├── README.md
-│
-├── game/
-│   ├── __init__.py
-│   ├── game_window.py
-│   ├── player.py
-│   ├── player_controller.py
-│   ├── physics_helpers.py
-│   ├── resources.py
-│   ├── save_system.py
-│   └── camera.py
-│
-├── entities/
-│   ├── __init__.py
-│   ├── base_entity.py
-│   ├── enemy.py
-│   ├── boss.py
-│   ├── projectile.py
-│   └── interactable_object.py
-│
-├── systems/
-│   ├── __init__.py
-│   ├── combat_system.py
-│   ├── haustoria_system.py
-│   ├── object_interaction_system.py
-│   ├── resource_system.py
-│   ├── collision_system.py
-│   └── level_loader.py
-│
-├── levels/
-├── assets/
-└── docs/
+Haustoria/
+|
+|-- README.md
+|-- Task.md
+|-- implementation_checklist.md
+|-- first_prototype_task_brief.md
+|-- Haustoria initial description_.docx
+|
+|-- specs/
+|   |-- coding_standards_spec.md
+|   |-- core_systems_spec.md
+|   |-- enemy_ai_spec.md
+|   |-- entity_spec.md
+|   |-- entity_spec.md.docx
+|   |-- haustoria_ability_spec.md
+|   |-- level_map_spec.md
+|   |-- object_interaction_spec.md
+|   |-- player_control_spec.md
+|   |-- technical_architecture_spec.md
+|   `-- world_structure_spec.md
+|
+`-- haustoria/
+    |-- main.py
+    |-- constants.py
+    |-- requirements.txt
+    |
+    |-- game/
+    |   |-- __init__.py
+    |   |-- camera.py
+    |   |-- game_window.py
+    |   |-- physics_helpers.py
+    |   |-- player.py
+    |   |-- player_controller.py
+    |   |-- resources.py
+    |   `-- save_system.py
+    |
+    |-- entities/
+    |   |-- __init__.py
+    |   |-- breakable_terrain.py
+    |   |-- enemy.py
+    |   |-- interactable_object.py
+    |   |-- level_exit.py
+    |   `-- save_point.py
+    |
+    |-- systems/
+    |   |-- __init__.py
+    |   |-- collision_system.py
+    |   |-- combat_system.py
+    |   |-- enemy_ai_system.py
+    |   |-- haustoria_system.py
+    |   |-- level_loader.py
+    |   `-- object_interaction_system.py
+    |
+    `-- assets/
+        |-- Map LVL 1.png
+        |-- burrowing_worm.png
+        |-- player.png
+        |-- player_spritesheet.png
+        |-- tiles_flesh_1.png
+        |-- tiles_flesh_1.tsx
+        |-- wasp.png
+        |
+        `-- sprites/
+            |-- enemies/
+            |   |-- basic_enemy/
+            |   |   |-- worm_attack.png
+            |   |   |-- worm_move_0.png
+            |   |   |-- worm_move_1.png
+            |   |   `-- worm_move_2.png
+            |   `-- swarm_bug/
+            |       |-- bug_fly_0.png
+            |       |-- bug_fly_1.png
+            |       |-- bug_fly_2.png
+            |       `-- bug_fly_3.png
+            |
+            |-- environment/
+            |   |-- level_exit.png
+            |   |-- save_point.png
+            |   `-- water_source.png
+            |
+            |-- objects/
+            |   |-- bounce_spike.png
+            |   |-- crate.png
+            |   |-- rock.png
+            |   `-- spear.png
+            |
+            |-- player/
+            |   |-- player_fall_0.png ... player_fall_3.png
+            |   |-- player_idle_0.png ... player_idle_3.png
+            |   |-- player_jump_0.png ... player_jump_2.png
+            |   `-- player_walk_0.png ... player_walk_5.png
+            |
+            `-- tiles/
+                |-- breakable_wall.png
+                |-- ground.png
+                |-- ladder.png
+                |-- platform.png
+                `-- wall.png
 ```
 
 AI NOTE:
