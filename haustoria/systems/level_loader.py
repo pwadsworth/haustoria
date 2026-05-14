@@ -22,6 +22,13 @@ from constants import (
     COLOR_WATER_SOURCE, SCREEN_WIDTH, SCREEN_HEIGHT,
 )
 
+TILE_SPRITES = {
+    COLOR_GROUND: "assets/sprites/tiles/ground.png",
+    COLOR_PLATFORM: "assets/sprites/tiles/platform.png",
+    COLOR_WALL: "assets/sprites/tiles/wall.png",
+}
+LADDER_SPRITE = "assets/sprites/tiles/ladder.png"
+WATER_SOURCE_SPRITE = "assets/sprites/environment/water_source.png"
 
 # ---------------------------------------------------------------------------
 # Helper: create a solid-color wall/platform sprite
@@ -29,7 +36,18 @@ from constants import (
 
 def _make_block(cx: float, cy: float, w: int, h: int, color) -> arcade.Sprite:
     """Create a solid-color rectangular tile sprite."""
-    sprite = arcade.SpriteSolidColor(w, h, color=color)
+    texture_path = TILE_SPRITES.get(color)
+    if texture_path:
+        try:
+            sprite = arcade.Sprite()
+            sprite.texture = arcade.load_texture(texture_path)
+            sprite.width = w
+            sprite.height = h
+        except Exception as e:
+            print(f"Failed to load tile texture {texture_path}: {e}")
+            sprite = arcade.SpriteSolidColor(w, h, color=color)
+    else:
+        sprite = arcade.SpriteSolidColor(w, h, color=color)
     sprite.center_x = cx
     sprite.center_y = cy
     return sprite
@@ -37,7 +55,14 @@ def _make_block(cx: float, cy: float, w: int, h: int, color) -> arcade.Sprite:
 
 def _make_ladder_tile(cx: float, cy: float, h: int = 32) -> arcade.Sprite:
     """Create a single ladder segment sprite."""
-    sprite = arcade.SpriteSolidColor(16, h, color=COLOR_LADDER)
+    try:
+        sprite = arcade.Sprite()
+        sprite.texture = arcade.load_texture(LADDER_SPRITE)
+        sprite.width = 16
+        sprite.height = h
+    except Exception as e:
+        print(f"Failed to load ladder texture {LADDER_SPRITE}: {e}")
+        sprite = arcade.SpriteSolidColor(16, h, color=COLOR_LADDER)
     sprite.center_x = cx
     sprite.center_y = cy
     return sprite
@@ -45,7 +70,14 @@ def _make_ladder_tile(cx: float, cy: float, h: int = 32) -> arcade.Sprite:
 
 def _make_water_source(cx: float, cy: float) -> arcade.Sprite:
     """Create a water source pickup sprite."""
-    sprite = arcade.SpriteSolidColor(24, 24, color=COLOR_WATER_SOURCE)
+    try:
+        sprite = arcade.Sprite()
+        sprite.texture = arcade.load_texture(WATER_SOURCE_SPRITE)
+        sprite.width = 24
+        sprite.height = 24
+    except Exception as e:
+        print(f"Failed to load water source texture {WATER_SOURCE_SPRITE}: {e}")
+        sprite = arcade.SpriteSolidColor(24, 24, color=COLOR_WATER_SOURCE)
     sprite.center_x = cx
     sprite.center_y = cy
     return sprite
@@ -97,241 +129,175 @@ class LevelData:
 
 
 # ---------------------------------------------------------------------------
+# ASCII Parser
+# ---------------------------------------------------------------------------
+
+def load_zone_from_ascii(data: LevelData, layout: list[str], tile_size: int = 32):
+    """
+    Parses a top-down list of strings to generate the level.
+    """
+    rows = len(layout)
+    data.height = rows * tile_size
+    data.width = max(len(line) for line in layout) * tile_size
+
+    for row_idx, row in enumerate(layout):
+        # Y coordinate: row 0 is the TOP of the map
+        y = (rows - 1 - row_idx) * tile_size + (tile_size / 2)
+        
+        for col_idx, char in enumerate(row):
+            x = col_idx * tile_size + (tile_size / 2)
+            
+            if char == 'W':
+                data.wall_list.append(_make_block(x, y, tile_size, tile_size, COLOR_WALL))
+            elif char == 'G':
+                data.wall_list.append(_make_block(x, y, tile_size, tile_size, COLOR_GROUND))
+            elif char == 'P':
+                # Jump-through platforms are visually thinner (24px height)
+                data.platform_list.append(_make_block(x, y, tile_size, 24, COLOR_PLATFORM))
+            elif char == 'L':
+                data.ladder_list.append(_make_ladder_tile(x, y, tile_size))
+            elif char == 'B':
+                bwall = BreakableTerrain(
+                    center_x=x, center_y=y,
+                    width=tile_size, height=tile_size,
+                    health=1, break_method=BreakableTerrain.BREAK_ANY,
+                )
+                data.breakable_list.append(bwall)
+                data.breakables.append(bwall)
+            elif char == 'H':
+                bwall = BreakableTerrain(
+                    center_x=x, center_y=y,
+                    width=tile_size, height=tile_size,
+                    health=2, break_method=BreakableTerrain.BREAK_ANY,
+                )
+                data.breakable_list.append(bwall)
+                data.breakables.append(bwall)
+            elif char == 'E':
+                e = make_basic_enemy(center_x=x, center_y=y, facing=-1)
+                e.patrol_origin_x = x
+                data.enemy_list.append(e)
+                data.enemies.append(e)
+            elif char == 'S':
+                bug = make_swarm_bug(center_x=x, center_y=y)
+                data.enemy_list.append(bug)
+                data.enemies.append(bug)
+            elif char == 'R':
+                r = make_heavy_rock(center_x=x, center_y=y)
+                data.object_list.append(r)
+                data.objects.append(r)
+            elif char == 'C':
+                c = make_wooden_crate(center_x=x, center_y=y)
+                data.object_list.append(c)
+                data.objects.append(c)
+            elif char == 'p':
+                s = make_spear(center_x=x, center_y=y)
+                data.object_list.append(s)
+                data.objects.append(s)
+            elif char == 'b':
+                bo = make_bounce_object(center_x=x, center_y=y)
+                data.object_list.append(bo)
+                data.objects.append(bo)
+            elif char == 'w':
+                ws = _make_water_source(x, y)
+                data.water_source_list.append(ws)
+            elif char == 'v':
+                sp = SavePoint(center_x=x, center_y=y, save_id=f"sp_{data.name}_{col_idx}_{row_idx}")
+                data.save_point_list.append(sp)
+                data.save_points.append(sp)
+            elif char == 'x':
+                target = "test_zone_02" if data.name == "test_zone_01" else "test_zone_01"
+                ex = LevelExit(
+                    center_x=x, center_y=y,
+                    width=48, height=tile_size*2,
+                    target_level=target,
+                    target_spawn="default"
+                )
+                data.level_exit_list.append(ex)
+                data.level_exits.append(ex)
+            elif char == '+':
+                data.spawn_x = x
+                data.spawn_y = y
+            elif char == '@':
+                data.has_swarm_room = True
+                data.swarm_room_cx = x
+                data.swarm_room_cy = y
+
+
+# ---------------------------------------------------------------------------
 # Zone 1 — Traversal tutorial
 # ---------------------------------------------------------------------------
-# Layout (pixel coords, Y=0 at bottom):
-#
-#  Section A: Open ground + platform staircase (x 0–1000)
-#  Section B: Wall-cling shaft (x 1000–1300)
-#  Section C: Ladder climb (x 1300–1700)
-#  Section D: Enemy + object arena (x 1700–2800)
-#  Section E: Breakable-wall shortcut (x 2200)
-#  Section F: Level exit (x 2800)
-# ---------------------------------------------------------------------------
+
+ZONE_01_MAP = [
+    "WGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGW",
+    "W                                                                                                                                             W",
+    "W                                                                                                                                             W",
+    "W                                                                                                                                             W",
+    "W                                                                                                                                             W",
+    "W                                                                                                                                             W",
+    "W                                                                                                                                             W",
+    "W                               W    W                                         LW                                                             W",
+    "W                        PPP    W    W                                         LW                                                             W",
+    "W                               W    W   w                                     LWPPPP                                                         W",
+    "W                              PW    WPPPPPPP                                  LW                                                             W",
+    "W                               W    W                                         LW                                                             W",
+    "W                               W    W                                         LW                                                             W",
+    "W                          PP   W    W                                         LW                                                             W", "W                               W    W                                         LW        PPPPPPPPPP                                           W",
+    "W                               W    W           PPPP                          LW                                                             W",
+    "W                       P       W    W                                         LW                                                             W",
+    "W                               W    W                                         LW               E                                             W",
+    "W                   PPP         W    W                                         LW    PPPPPPPPPPPPPPPP                                         W",
+    "W                               W    W                                         LW                                                             W",
+    "W                               W    W                   PPPP                  LW                                                             W",
+    "W                PPP            W    W                                         LW                                                             W",
+    "W                               W    W                                         LW                        PPPPPPPPPPPPPPPP                     W",
+    "W           PPP                 W    W                                         LW                                                             W",
+    "W                               W    W                             p           LW                                                             W",
+    "W      PPP                      W    W                          PPPP           LW                   H                                         W",
+    "W                                    B                                         LW                   H                                         W",
+    "W                                    B                                         LW                   H                                         W",
+    "W +           R            R         B                                         LW      E             H                                       xW",
+    "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+]
 
 def load_zone_01() -> LevelData:
     data = LevelData()
     data.name = "test_zone_01"
-    data.width = 3200.0
-    data.height = 1024.0
-    data.spawn_x = 80
-    data.spawn_y = 54   # floor top (32) + player half-height (22) = 54
-
-    W = data.wall_list
-    P = data.platform_list
-    L = data.ladder_list
-
-    # ---- Ground floor (entire zone) ----
-    W.append(_make_block(1600, 16, 3200, 32, COLOR_GROUND))
-
-    # ---- Left boundary wall ----
-    W.append(_make_block(-16, 512, 32, 1024, COLOR_WALL))
-
-    # ---- Section A: Staircase platforms ----
-    P.append(_make_block(300,  160, 100, 24, COLOR_PLATFORM))
-    P.append(_make_block(500,  260, 100, 24, COLOR_PLATFORM))
-    P.append(_make_block(700,  360, 100, 24, COLOR_PLATFORM))
-    P.append(_make_block(900,  460, 100, 24, COLOR_PLATFORM))
-    P.append(_make_block(1000, 560, 50, 24, COLOR_PLATFORM))
-
-    # Drop-off before shaft
-    W.append(_make_block(960, 16, 32, 32, COLOR_GROUND))  # small step
-    
-    # ---- Section B: Wall-cling vertical shaft ----
-    # Interior width = 160 px (x 1040–1200).
-    # LEFT wall  — has a 140 px gap at the bottom so the player can walk in. Ground is at y=32 (floor top)
-    W.append(_make_block(1025, 390, 32, 500, COLOR_WALL))
-
-    # RIGHT wall — upper unbreakable section
-    # top is 640, bottom is 128. Height = 640-128 = 512. center_y = 128 + 256 = 384
-    W.append(_make_block(1200, 390, 32, 500, COLOR_WALL))
-    
-    # RIGHT wall — breakable bottom section
-    bwall_shaft = BreakableTerrain(
-        center_x=1200, center_y=64,
-        width=32, height=140,
-        health=1, break_method=BreakableTerrain.BREAK_ANY,
-    )
-    data.breakable_list.append(bwall_shaft)
-    data.breakables.append(bwall_shaft)
-
-
-    # Landing platform — to the RIGHT of the right wall (outer face at x=1232).
-    # Left edge at x=1264, safely outside the shaft.  Player wall-jumps out
-    # the open top and lands here before continuing to the ladder section.
-    P.append(_make_block(1360, 560, 100, 24, COLOR_PLATFORM))
-
-
-    # ---- Section C: Ladder climb ----
-    # Layout overview:
-    #   • Ladder is at x=1550, fully exposed and accessible from both the
-    #     ground (y=32) and the upper exit platform (y=656).
-    #   • A backing wall on the right (x=1584) gives visual context.
-    #   • A connecting platform at y=668 links the ladder top to the level.
-    #
-    # Ladder tiles: 16px wide, 30px tall, spaced 32px apart.
-    # Tiles run from y=144 (above shortcut) to y=656 (exit platform height).
-    #   count = (656 - 144) // 30 + 1 = 18 rungs
-
-    for row in range(18):
-        L.append(_make_ladder_tile(1550, 144 + row * 30))
-
-    # Backing wall to the right of the ladder — upper unbreakable section
-    # top is 670, bottom is 120. Height = 670-120 = 550. center_y = 128 + 280 = 400
-    W.append(_make_block(1580, 400, 32, 550, COLOR_WALL))
-    
-    # Backing wall — breakable bottom section
-    bwall_stair = BreakableTerrain(
-        center_x=1580, center_y=64,
-        width=32, height=128,
-        health=1, break_method=BreakableTerrain.BREAK_ANY,
-    )
-    data.breakable_list.append(bwall_stair)
-    data.breakables.append(bwall_stair)
-
-    # ---- Section D: Enemy + object arena ----
-    # Wide ground section continues from floor
-    P.append(_make_block(2000, 320, 512, 24, COLOR_PLATFORM))  # mid platform
-    P.append(_make_block(2400, 450, 320, 24, COLOR_PLATFORM))  # high platform
-
-    # ---- Section E: Breakable wall (shortcut) ----
-    bwall = BreakableTerrain(
-        center_x=2200, center_y=80,
-        width=32, height=128,
-        health=2, break_method=BreakableTerrain.BREAK_ANY,
-    )
-    data.breakable_list.append(bwall)
-    data.breakables.append(bwall)
-
-    # ---- Section F: Exit ----
-    exit_sprite = LevelExit(
-        center_x=3050, center_y=80,
-        width=48, height=80,
-        target_level="test_zone_02",
-        target_spawn="default",
-    )
-    data.level_exit_list.append(exit_sprite)
-    data.level_exits.append(exit_sprite)
-
-    # ---- Enemies ----
-    e1 = make_basic_enemy(center_x=1800, center_y=80, facing=-1)
-    e1.patrol_origin_x = 1800
-    data.enemy_list.append(e1)
-    data.enemies.append(e1)
-
-    e2 = make_basic_enemy(center_x=2100, center_y=356, facing=1)
-    e2.patrol_origin_x = 2100
-    data.enemy_list.append(e2)
-    data.enemies.append(e2)
-
-    # ---- Objects ----
-    # Shortcut tools at start
-    data.object_list.append(make_heavy_rock(center_x=250, center_y=80))
-    data.object_list.append(make_heavy_rock(center_x=300, center_y=80))
-
-    data.object_list.append(make_spear(center_x=1850, center_y=80))
-    spear = make_spear(center_x=200, center_y=80)
-    data.object_list.append(spear)
-    data.objects.append(spear)
-
-    rock = make_heavy_rock(center_x=450, center_y=80)
-    data.object_list.append(rock)
-    data.objects.append(rock)
-
-    crate = make_wooden_crate(center_x=650, center_y=280)
-    data.object_list.append(crate)
-    data.objects.append(crate)
-
-    # Bounce objects (embedded spear tips)
-    b1 = make_bounce_object(center_x=480, center_y=176)  # near staircase platform
-    data.object_list.append(b1)
-    data.objects.append(b1)
-
-    b2 = make_bounce_object(center_x=1900, center_y=344)  # on mid platform
-    data.object_list.append(b2)
-    data.objects.append(b2)
-
-    # ---- Water source ----
-    ws = _make_water_source(150, 70)
-    data.water_source_list.append(ws)
-
-    # ---- Save point ----
-    sp = SavePoint(center_x=250, center_y=58, save_id="sp_zone01")
-    data.save_point_list.append(sp)
-    data.save_points.append(sp)
-
+    load_zone_from_ascii(data, ZONE_01_MAP)
     return data
 
 
 # ---------------------------------------------------------------------------
 # Zone 2 — Locked swarm room
 # ---------------------------------------------------------------------------
-# Camera locks to this room. 8 swarm bugs spawn in waves.
-# A level exit leads to the end.
-# ---------------------------------------------------------------------------
+
+ZONE_02_MAP = [
+    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+    "W                                      W",
+    "W                                      W",
+    "W                                      W",
+    "W                             S S S S  W",
+    "W                             S S S S  W",
+    "W                                      W",
+    "W                                      W",
+    "W                                      W",
+    "W                                      W",
+    "W                                      W",
+    "W                   @                  W",
+    "W               PPPPPPPP               W",
+    "W                                      W",
+    "W                                      W",
+    "W                                      W",
+    "W      PPPPPP              PPPPPP      W",
+    "W                                      W",
+    "W                                      W",
+    "W +   v       R    b                  xW",
+    "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+]
 
 def load_zone_02() -> LevelData:
     data = LevelData()
     data.name = "test_zone_02"
-    data.width = 1280.0
-    data.height = 720.0
-    data.spawn_x = 80
-    data.spawn_y = 120
-
-    # Camera locks to center of this room
-    data.has_swarm_room = True
-    data.swarm_room_cx = 640
-    data.swarm_room_cy = 360
-
-    W = data.wall_list
-    P = data.platform_list
-
-    # ---- Room boundaries ----
-    W.append(_make_block(640,    8, 1280,  16, COLOR_GROUND))   # floor
-    W.append(_make_block(640,  712, 1280,  16, COLOR_WALL))     # ceiling
-    W.append(_make_block(   8, 360,   16, 720, COLOR_WALL))     # left
-    W.append(_make_block(1272, 360,   16, 720, COLOR_WALL))     # right
-
-    # ---- Interior platforms ----
-    P.append(_make_block(320,  240, 192, 24, COLOR_PLATFORM))
-    P.append(_make_block(640,  400, 256, 24, COLOR_PLATFORM))
-    P.append(_make_block(960,  240, 192, 24, COLOR_PLATFORM))
-
-    # ---- Bounce objects in arena ----
-    b1 = make_bounce_object(center_x=320, center_y=264)
-    data.object_list.append(b1)
-    data.objects.append(b1)
-
-    # ---- Throwable rock for combat ----
-    rock = make_heavy_rock(center_x=160, center_y=80)
-    data.object_list.append(rock)
-    data.objects.append(rock)
-
-    # ---- Swarm bugs — 8 bugs per swarm, loose cluster ----
-    spawn_positions = [
-        (880, 600), (940, 600), (1000, 600), (1060, 600),
-        (880, 550), (940, 550), (1000, 550), (1060, 550),
-    ]
-    for sx, sy in spawn_positions:
-        bug = make_swarm_bug(center_x=sx, center_y=sy)
-        data.enemy_list.append(bug)
-        data.enemies.append(bug)
-
-    # ---- Level exit ----
-    exit_sprite = LevelExit(
-        center_x=1240, center_y=80,
-        width=48, height=80,
-        target_level="test_zone_01",  # loops back for prototype
-        target_spawn="default",
-    )
-    data.level_exit_list.append(exit_sprite)
-    data.level_exits.append(exit_sprite)
-
-    # ---- Save point before boss room ----
-    sp = SavePoint(center_x=100, center_y=58, save_id="sp_zone02")
-    data.save_point_list.append(sp)
-    data.save_points.append(sp)
-
+    load_zone_from_ascii(data, ZONE_02_MAP)
     return data
 
 

@@ -5,13 +5,19 @@ save_point.py — Interactive checkpoint bench.
 import arcade
 from constants import COLOR_SAVE_POINT
 
+SAVE_POINT_SPRITE = "assets/sprites/environment/save_point.png"
+
 
 class SavePoint(arcade.Sprite):
     """A bench-like checkpoint. Activates when player presses E nearby."""
 
     def __init__(self, center_x: float, center_y: float, save_id: str = "sp_01"):
         super().__init__()
-        self.texture = arcade.make_soft_square_texture(36, COLOR_SAVE_POINT, outer_alpha=255)
+        try:
+            self.texture = arcade.load_texture(SAVE_POINT_SPRITE)
+        except Exception as e:
+            print(f"Failed to load save point texture {SAVE_POINT_SPRITE}: {e}")
+            self.texture = arcade.make_soft_square_texture(36, COLOR_SAVE_POINT, outer_alpha=255)
         self.width = 36
         self.height = 20
         self.center_x = center_x

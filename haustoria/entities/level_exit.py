@@ -5,6 +5,8 @@ level_exit.py — Triggers a level transition when the player enters it.
 import arcade
 from constants import COLOR_LEVEL_EXIT
 
+LEVEL_EXIT_SPRITE = "assets/sprites/environment/level_exit.png"
+
 
 class LevelExit(arcade.Sprite):
     """
@@ -23,9 +25,13 @@ class LevelExit(arcade.Sprite):
         target_spawn: str = "default",
     ):
         super().__init__()
-        self.texture = arcade.make_soft_square_texture(
-            max(width, height), COLOR_LEVEL_EXIT, outer_alpha=120
-        )
+        try:
+            self.texture = arcade.load_texture(LEVEL_EXIT_SPRITE)
+        except Exception as e:
+            print(f"Failed to load level exit texture {LEVEL_EXIT_SPRITE}: {e}")
+            self.texture = arcade.make_soft_square_texture(
+                max(width, height), COLOR_LEVEL_EXIT, outer_alpha=120
+            )
         self.width = width
         self.height = height
         self.center_x = center_x

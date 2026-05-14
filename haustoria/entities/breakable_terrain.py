@@ -5,6 +5,8 @@ breakable_terrain.py — A wall tile that can be destroyed by thrown objects.
 import arcade
 from constants import COLOR_BREAKABLE_WALL
 
+BREAKABLE_WALL_SPRITE = "assets/sprites/tiles/breakable_wall.png"
+
 
 class BreakableTerrain(arcade.Sprite):
     """
@@ -29,9 +31,13 @@ class BreakableTerrain(arcade.Sprite):
         break_method: str = "ANY_DAMAGE",
     ):
         super().__init__()
-        self.texture = arcade.make_soft_square_texture(
-            max(width, height), COLOR_BREAKABLE_WALL, outer_alpha=200
-        )
+        try:
+            self.texture = arcade.load_texture(BREAKABLE_WALL_SPRITE)
+        except Exception as e:
+            print(f"Failed to load breakable wall texture {BREAKABLE_WALL_SPRITE}: {e}")
+            self.texture = arcade.make_soft_square_texture(
+                max(width, height), COLOR_BREAKABLE_WALL, outer_alpha=200
+            )
         self.width = width
         self.height = height
         self.center_x = center_x
