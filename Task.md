@@ -26,14 +26,23 @@
 - [x] Bounce object (jump onto green bounce pad)
 - [x] Enemy patrol + chase detection
 - [x] Melee attack (J with no held object) + hit stun
-- [ ] Haustoria drain (E near stunned/close enemy) → water/chloro gain
+- [x] Haustoria drain (E near stunned/close enemy) → water/chloro gain
 - [x] Save point interaction (E near save point) + respawn (R after dying)
-- [ ] Breakable terrain (throw heavy rock at breakable wall)
+- [x] Breakable terrain (throw heavy rock at breakable wall)
 - [x] Level exit → Zone 2 transition
 - [x] Zone 2 swarm encounter — flocking in motion
 
 ### 🔲 Polish / known deferred items
-- [ ] Replace remaining `arcade.draw_text` (enemy labels in debug world)
+- [x] Replace remaining `arcade.draw_text` (enemy labels in debug world)
 - [x] Ladder section access (Section C) — verify ladder tiles line up
-- [x] Spawn position for Zone 2
-- [ ] Tiled `.tmx` map loading (post-prototype)
+- [x] Swarm in Zone 2
+- [x] Use basic terrain tiles
+- [ ] Add boss and boss room
+- [ ] Make good sprites for enemies, objects, player, and environment
+- [ ] Add proper sound effects
+
+## Post Prototype
+- [ ] Tiled `.tmx` map loading
+- [ ] Create full Zone 1 map
+- [ ] Create full Zone 2 map
+- [ ] Create full Zone 3 map
